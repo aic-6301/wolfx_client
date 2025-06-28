@@ -23,7 +23,7 @@ setup(
         'Programming Language :: Python :: 3.12',
         'Framework :: AsyncIO',
     ],
-    packages=['wolfx_client'],
+    packages=['wolfx_client', 'wolfx_client.types'],
     install_requires=[
         'websockets',
         'asyncio',

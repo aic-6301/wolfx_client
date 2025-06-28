@@ -3,6 +3,7 @@ import inspect
 import websockets
 import logging
 import json
+import threading
 
 from .types.EEW import EEW
 from .types.EQL import EarthquakeData
@@ -72,15 +73,23 @@ class Client:
         self.isEQL = isEQL
         self.handlers = EventHandler(self)
         self.url = self.__get_url__()
-        self._loop = asyncio.get_event_loop()
+        self._task = None
+        self._running = False
 
     def event(self, func):
         self.handlers.register(func.__name__, func)
         return func
 
     async def _connect(self):
-        async with websockets.connect(self.url) as ws:
-            await self.handlers.get("on_ready")()
+        async with websockets.connect(self.url, logger=logger) as ws:
+            # on_readyハンドラーが存在する場合のみ呼び出し
+            on_ready_handler = self.handlers.get("on_ready")
+            if on_ready_handler:
+                if inspect.iscoroutinefunction(on_ready_handler):
+                    await on_ready_handler()
+                else:
+                    on_ready_handler()
+            
             async for message in ws:
                 await self.handlers.dispatch(message)
     
@@ -92,10 +101,52 @@ class Client:
 
     @property
     def is_connected(self):
-        return self._loop.is_running()
+        return self._running and self._task and not self._task.done()
 
-    def run(self):
+    async def start(self):
+        """WebSocket接続を開始します（discord.pyとの統合用）"""
+        if self._running:
+            print("既に実行中です")
+            return
+            
+        self._running = True
         try:
-            self._loop.run_until_complete(self._connect())
+            await self._connect()
+        except Exception as e:
+            print(f"WebSocket接続エラー: {e}")
+        finally:
+            self._running = False
+
+    def run(self, loop=None):
+        """WebSocket接続を開始します（非同期でバックグラウンド実行）"""
+        if self._running:
+            print("既に実行中です")
+            return self._task
+            
+        # 現在のイベントループを取得（discord.pyのループを使用）
+        if loop is None:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                # イベントループが実行中でない場合は新しく作成
+                return self.run_sync()
+        
+        self._task = loop.create_task(self.start())
+        return self._task
+            
+    def run_sync(self):
+        """WebSocket接続を開始します（同期実行、ブロッキング）"""
+        try:
+            asyncio.run(self.start())
         except KeyboardInterrupt:
             pass
+            
+    async def stop(self):
+        """WebSocket接続を停止します"""
+        if self._task and not self._task.done():
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+        self._running = False

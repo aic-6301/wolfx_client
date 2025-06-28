@@ -8,8 +8,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='Wolfx Client',
-    version='0.1.0',
+    name='Wolfx_Client',
+    version='1.0.0',
     description='A WebSocket client for WolfX',
     long_description=long_description,
     long_description_content_type='text/markdown',

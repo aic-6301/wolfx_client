@@ -3,11 +3,13 @@ import inspect
 import websockets
 import logging
 import json
-import threading
+import traceback
 
 from .types.EEW import EEW
 from .types.EQL import EarthquakeData
 from .types.heartbeat import Heartbeat
+
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -44,7 +46,7 @@ class EventHandler:
 
             # 型付きデータクラスに変換
             if expected_type is dict:
-                args = (data_dict,)
+                args = (expected_type(data_dict),)
             elif expected_type is Heartbeat:
                 # Heartbeatは単一の引数を期待
                 args = (expected_type(data_dict),)
@@ -58,6 +60,7 @@ class EventHandler:
 
         except Exception as e:
             print(f"[DispatchError] {e}")
+            traceback.print_exc()
 
 
 class Client:

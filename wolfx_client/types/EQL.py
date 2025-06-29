@@ -1,6 +1,7 @@
 from typing import Union
 
 class Earthquake:
+    _type = "jma_eqlist"
     title: str
     """地震情報の種類"""
     eventID: str

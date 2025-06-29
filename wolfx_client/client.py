@@ -46,12 +46,9 @@ class EventHandler:
 
             # 型付きデータクラスに変換
             if expected_type is dict:
-                args = (expected_type(data_dict),)
-            elif expected_type is Heartbeat:
-                # Heartbeatは単一の引数を期待
-                args = (expected_type(data_dict),)
+                args = (data_dict,)
             else:
-                args = (expected_type(**data_dict),)
+                args = (expected_type(data_dict),)
 
             if inspect.iscoroutinefunction(handler):
                 await handler(*args)

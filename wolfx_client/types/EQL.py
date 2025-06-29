@@ -46,7 +46,7 @@ class EarthquakeData:
     md5: str
     """MD5ハッシュ"""
 
-    def __init__(self, **data):
+    def __init__(self, data: dict):
         self.md5 = data["md5"]
         self.data = {}
         
